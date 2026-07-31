@@ -46,12 +46,12 @@ func register_card(card: Control) -> void:
 		card.mouse_exited.connect(_on_card_mouse_exited.bind(card))
 
 func _on_card_mouse_entered(card: Control) -> void:
-	if _dragging_card == null:
+	if _dragging_card == null and !_is_card_fixed(card):
 		var tw := card.create_tween()
 		tw.tween_property(card, "scale", Vector2.ONE * hover_scale, 0.1)
 
 func _on_card_mouse_exited(card: Control) -> void:
-	if _dragging_card != card:
+	if _dragging_card != card and !_is_card_fixed(card):
 		var tw := card.create_tween()
 		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
 
@@ -66,6 +66,9 @@ func _on_card_gui_input(event: InputEvent, card: Control) -> void:
 
 func _start_drag(card: Control) -> void:
 	if _dragging_card != null:
+		return
+
+	if _is_card_fixed(card):
 		return
 
 	_dragging_card = card
@@ -119,6 +122,10 @@ func _return_to_origin(card: Control) -> void:
 		card.z_index = _origin_z_index
 		card_drag_cancelled.emit(card)
 	)
+
+func _is_card_fixed(card: Control) -> bool:
+	var possible_drop_zone = card.get_parent()
+	return possible_drop_zone is DropZone
 
 func _find_drop_zone_under(card: Control) -> DropZone:
 	var zones := get_tree().get_nodes_in_group("drop_zone")
