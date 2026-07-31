@@ -1,5 +1,7 @@
 extends ColorRect
 
+class_name DropZone
+
 @export var zone_size := Vector2(100, 140)
 
 func get_drop_rect() -> Rect2:
@@ -7,3 +9,6 @@ func get_drop_rect() -> Rect2:
 
 func get_card_anchor_position() -> Vector2:
 	return global_position
+
+func is_occupied() -> bool:
+	return get_child_count() > 0

@@ -90,25 +90,24 @@ func _end_drag(card: Control) -> void:
 	if _dragging_card != card:
 		return
 
-	var drop_zone := _find_drop_zone_under(card)
+	var drop_zone: DropZone = _find_drop_zone_under(card)
 
 	var tw := card.create_tween()
 	tw.tween_property(card, "scale", Vector2.ONE, 0.1)
 
-	if drop_zone:
+	if drop_zone and !drop_zone.is_occupied():
 		_handle_valid_drop(card, drop_zone)
 	else:
 		_return_to_origin(card)
 
 	_dragging_card = null
 
-func _handle_valid_drop(card: Control, drop_zone: Node) -> void:
-	if snap_to_drop_zone and drop_zone.has_method("get_card_anchor_position"):
-		var target_pos: Vector2 = drop_zone.get_card_anchor_position()
-		card.reparent(drop_zone)
-		var tw := card.create_tween()
-		tw.tween_property(card, "global_position", target_pos, 0.15)\
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+func _handle_valid_drop(card: Control, drop_zone: DropZone) -> void:
+	var target_pos: Vector2 = drop_zone.get_card_anchor_position()
+	card.reparent(drop_zone)
+	var tw := card.create_tween()
+	tw.tween_property(card, "global_position", target_pos, 0.15)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	card.z_index = _origin_z_index
 	card_dropped.emit(card, drop_zone)
 
@@ -121,18 +120,14 @@ func _return_to_origin(card: Control) -> void:
 		card_drag_cancelled.emit(card)
 	)
 
-func _find_drop_zone_under(card: Control) -> Node:
+func _find_drop_zone_under(card: Control) -> DropZone:
 	var zones := get_tree().get_nodes_in_group("drop_zone")
 	var card_center := card.global_position + card.size * 0.5
 
 	for zone in zones:
-		if zone is Control:
-			var rect: Rect2 = (zone as Control).get_global_rect()
+		if zone is DropZone:
+			var rect: Rect2 = (zone as DropZone).get_global_rect()
 			if rect.has_point(card_center):
-				return zone
-		elif zone.has_method("get_drop_rect"):
-			var rect2: Rect2 = zone.get_drop_rect()
-			if rect2.has_point(card_center):
 				return zone
 
 	return null
