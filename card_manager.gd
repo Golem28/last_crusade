@@ -105,6 +105,7 @@ func _end_drag(card: Control) -> void:
 func _handle_valid_drop(card: Control, drop_zone: Node) -> void:
 	if snap_to_drop_zone and drop_zone.has_method("get_card_anchor_position"):
 		var target_pos: Vector2 = drop_zone.get_card_anchor_position()
+		card.reparent(drop_zone)
 		var tw := card.create_tween()
 		tw.tween_property(card, "global_position", target_pos, 0.15)\
 			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
