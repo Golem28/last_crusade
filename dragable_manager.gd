@@ -66,12 +66,9 @@ func _end_drag(dragable: Dragable) -> void:
 	var drop_zone: DropZone = _find_drop_zone_under(dragable)
 	dragable.end_drag()
 
-	if drop_zone and GameManager.try_spend(1):
-		if drop_zone.is_occupied():
-			pass
-		else:
-			dragable.handle_valid_drop(drop_zone)
-			card_dropped.emit(dragable, drop_zone)
+	if drop_zone and !drop_zone.is_occupied() and GameManager.try_spend(1):
+		dragable.handle_valid_drop(drop_zone)
+		card_dropped.emit(dragable, drop_zone)
 	else:
 		dragable.return_to_origin()
 		card_drag_cancelled.emit(dragable)
