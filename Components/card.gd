@@ -10,25 +10,19 @@ func _ready() -> void:
 	_setup_card_data()
 	super._ready()
 
-func start_drag() -> void:
-	_acted = true
-	super.start_drag()
-
 func handle_valid_drop(drop_zone: DropZone) -> void:
+	_acted = true
+	
 	super.handle_valid_drop(drop_zone)
+
 	self.custom_minimum_size = Vector2(120, 120)
 	self.set_size(Vector2(120, 120))
 	
 	var drop_zone_type := drop_zone.get_drop_zone_type()
 	
-	if drop_zone_type != DropZone.ZONE_TYPE.FRONT:
-		(get_node("Content/Front") as Control).visible = false
-
-	if drop_zone_type != DropZone.ZONE_TYPE.FLANK:
-		(get_node("Content/Flank") as Control).visible = false
-
-	if drop_zone_type != DropZone.ZONE_TYPE.REAR:
-		(get_node("Content/Rear") as Control).visible = false
+	(get_node("Content/Front") as Control).visible = drop_zone_type == DropZone.ZONE_TYPE.FRONT
+	(get_node("Content/Flank") as Control).visible = drop_zone_type == DropZone.ZONE_TYPE.FLANK
+	(get_node("Content/Rear") as Control).visible = drop_zone_type == DropZone.ZONE_TYPE.REAR
 
 func _setup_card_data() -> void:
 	var front_label = get_node("Content/Front/Label")
