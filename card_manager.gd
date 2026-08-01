@@ -98,21 +98,16 @@ func _end_drag(card: Control) -> void:
 	var tw := card.create_tween()
 	tw.tween_property(card, "scale", Vector2.ONE, 0.1)
 
-	if drop_zone and !drop_zone.is_occupied():
-		_handle_valid_drop(card, drop_zone)
+	if drop_zone and GameManager.try_spend(1):
+		if drop_zone.is_occupied():
+			pass
+		else:
+			card.handle_valid_drop(drop_zone, _origin_z_index)
+			card_dropped.emit(card, drop_zone)
 	else:
 		_return_to_origin(card)
 
 	_dragging_card = null
-
-func _handle_valid_drop(card: Control, drop_zone: DropZone) -> void:
-	var target_pos: Vector2 = drop_zone.get_card_anchor_position()
-	card.reparent(drop_zone)
-	var tw := card.create_tween()
-	tw.tween_property(card, "global_position", target_pos, 0.15)\
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	card.z_index = _origin_z_index
-	card_dropped.emit(card, drop_zone)
 
 func _return_to_origin(card: Control) -> void:
 	var tw := card.create_tween()
@@ -123,9 +118,8 @@ func _return_to_origin(card: Control) -> void:
 		card_drag_cancelled.emit(card)
 	)
 
-func _is_card_fixed(card: Control) -> bool:
-	var possible_drop_zone = card.get_parent()
-	return possible_drop_zone is DropZone
+func _is_card_fixed(card: Card) -> bool:
+	return GameManager.actions_remaining == 0 or card.acted_this_turn()
 
 func _find_drop_zone_under(card: Control) -> DropZone:
 	var zones := get_tree().get_nodes_in_group("drop_zone")
