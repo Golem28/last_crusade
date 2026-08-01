@@ -1,7 +1,8 @@
-extends Control
 class_name Card
+extends Dragable
 
 var _acted: bool = false
+
 @export var card_data: Dictionary = {}
 
 func _ready() -> void:
@@ -10,14 +11,9 @@ func _ready() -> void:
 	GameManager.turn_started.connect(func(): _acted = false)
 	_setup_card_data()
 
-func handle_valid_drop(drop_zone: DropZone, origin_z_index: int) -> void:
+func start_drag() -> void:
 	_acted = true
-	var target_pos: Vector2 = drop_zone.get_card_anchor_position()
-	self.reparent(drop_zone)
-	var tw := self.create_tween()
-	tw.tween_property(self, "global_position", target_pos, 0.15)\
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	self.z_index = origin_z_index
+	super.start_drag()
 
 func _setup_card_data() -> void:
 	var front_label = get_child(4)

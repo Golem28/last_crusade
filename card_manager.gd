@@ -14,21 +14,11 @@ extends Node2D
 
 class_name CardManager
 
-signal card_picked_up(card: Control)
-signal card_dropped(card: Control, drop_zone: Node)
-signal card_drag_cancelled(card: Control)
+signal card_picked_up(card: Dragable)
+signal card_dropped(card: Dragable, drop_zone: Node)
+signal card_drag_cancelled(card: Dragable)
 
-@export var drag_z_index := 100
-@export var return_speed := 12.0        # higher = snappier return-to-origin
-@export var snap_to_drop_zone := true
-@export var hover_scale := 1.05
-@export var drag_scale := 1.1
-
-var _dragging_card: Control = null
-var _drag_offset := Vector2.ZERO
-var _origin_position := Vector2.ZERO
-var _origin_parent: Node = null
-var _origin_z_index := 0
+var _dragging_dragable: Dragable = null
 
 func _ready() -> void:
 	set_process(true)
@@ -45,15 +35,13 @@ func register_card(card: Control) -> void:
 	if not card.mouse_exited.is_connected(_on_card_mouse_exited):
 		card.mouse_exited.connect(_on_card_mouse_exited.bind(card))
 
-func _on_card_mouse_entered(card: Control) -> void:
-	if _dragging_card == null and !_is_card_fixed(card):
-		var tw := card.create_tween()
-		tw.tween_property(card, "scale", Vector2.ONE * hover_scale, 0.1)
+func _on_card_mouse_entered(dragable: Dragable) -> void:
+	if _dragging_dragable == null and !_is_card_fixed(dragable):
+		dragable.start_hover()
 
-func _on_card_mouse_exited(card: Control) -> void:
-	if _dragging_card != card and !_is_card_fixed(card):
-		var tw := card.create_tween()
-		tw.tween_property(card, "scale", Vector2.ONE, 0.1)
+func _on_card_mouse_exited(dragable: Dragable) -> void:
+	if _dragging_dragable != dragable and !_is_card_fixed(dragable):
+		dragable.end_hover()
 
 func _on_card_gui_input(event: InputEvent, card: Control) -> void:
 	if event is InputEventMouseButton:
@@ -64,59 +52,40 @@ func _on_card_gui_input(event: InputEvent, card: Control) -> void:
 			else:
 				_end_drag(card)
 
-func _start_drag(card: Control) -> void:
-	if _dragging_card != null:
+func _start_drag(dragable: Card) -> void:
+	if _dragging_dragable != null:
 		return
 
-	if _is_card_fixed(card):
+	if _is_card_fixed(dragable):
 		return
-
-	_dragging_card = card
-	_origin_position = card.position
-	_origin_parent = card.get_parent()
-	_origin_z_index = card.z_index
-
-	_drag_offset = card.get_global_mouse_position() - card.global_position
-	card.z_index = drag_z_index
-
-	var tw := card.create_tween()
-	tw.tween_property(card, "scale", Vector2.ONE * drag_scale, 0.08)
-
-	card_picked_up.emit(card)
+	
+	_dragging_dragable = dragable
+	dragable.start_drag()
+	card_picked_up.emit(dragable)
 
 func _process(_delta: float) -> void:
-	if _dragging_card:
+	if _dragging_dragable:
 		# Follow the mouse while dragging.
-		_dragging_card.global_position = get_viewport().get_mouse_position() - _drag_offset
+		_dragging_dragable.hover_update()
 
-func _end_drag(card: Control) -> void:
-	if _dragging_card != card:
+func _end_drag(dragable: Dragable) -> void:
+	if _dragging_dragable != dragable:
 		return
 
-	var drop_zone: DropZone = _find_drop_zone_under(card)
-
-	var tw := card.create_tween()
-	tw.tween_property(card, "scale", Vector2.ONE, 0.1)
+	var drop_zone: DropZone = _find_drop_zone_under(dragable)
+	dragable.end_drag()
 
 	if drop_zone and GameManager.try_spend(1):
 		if drop_zone.is_occupied():
 			pass
 		else:
-			card.handle_valid_drop(drop_zone, _origin_z_index)
-			card_dropped.emit(card, drop_zone)
+			dragable.handle_valid_drop(drop_zone)
+			card_dropped.emit(dragable, drop_zone)
 	else:
-		_return_to_origin(card)
+		dragable.return_to_origin()
+		card_drag_cancelled.emit(dragable)
 
-	_dragging_card = null
-
-func _return_to_origin(card: Control) -> void:
-	var tw := card.create_tween()
-	tw.tween_property(card, "position", _origin_position, 0.2)\
-		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.finished.connect(func():
-		card.z_index = _origin_z_index
-		card_drag_cancelled.emit(card)
-	)
+	_dragging_dragable = null
 
 func _is_card_fixed(card: Card) -> bool:
 	return GameManager.actions_remaining == 0 or card.acted_this_turn()
