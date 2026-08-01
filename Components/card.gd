@@ -8,15 +8,16 @@ var _acted: bool = false
 func _ready() -> void:
 	GameManager.turn_started.connect(func(): _acted = false)
 	_setup_card_data()
+	super._ready()
 
 func start_drag() -> void:
 	_acted = true
 	super.start_drag()
 
 func _setup_card_data() -> void:
-	var front_label = get_node("HoverControl/Front/Label")
-	var support_label = get_node("HoverControl/Flank/Label")
-	var range_label = get_node("HoverControl/Rear/Label")
+	var front_label = get_node("HoverControl/Content/Front/Label")
+	var support_label = get_node("HoverControl/Content/Flank/Label")
+	var range_label = get_node("HoverControl/Content/Rear/Label")
 	(front_label as RichTextLabel).text = card_data.get("front_label", "")
 	(support_label as RichTextLabel).text = card_data.get("support_label", "")
 	(range_label as RichTextLabel).text = card_data.get("range_label", "")
