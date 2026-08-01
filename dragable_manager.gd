@@ -1,29 +1,20 @@
 extends Node2D
-## CardManager
+
+## DragableManager
 ##
-## Handles a hand/board of draggable "Card" nodes (Control-based).
-## Attach this to a parent node that contains your card scenes,
-## or use it as an autoload/singleton if you manage cards from multiple scenes.
+## Handles a hand/board of draggable nodes (Control-based).
 ##
-## Expects each card to be a Control (or Node2D — see note below) with:
+## Expects each dragable to be a Control with:
 ##   - A unique instance for drag state
-##   - Optional "card_data" property/dictionary for game logic
 ##
 ## Drop zones are any node in the "drop_zone" group with a get_rect()/global rect
 ## you can test against, or you can swap in your own zone detection.
-
-class_name CardManager
 
 signal card_picked_up(card: Dragable)
 signal card_dropped(card: Dragable, drop_zone: Node)
 signal card_drag_cancelled(card: Dragable)
 
 var _dragging_dragable: Dragable = null
-
-func _ready() -> void:
-	set_process(true)
-	set_process_unhandled_input(true)
-
 
 ## Call this from each card's _ready(), or connect these from the card
 ## scene itself via `card_manager.register_card(self)`.

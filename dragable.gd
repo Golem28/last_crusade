@@ -12,6 +12,9 @@ var _origin_position := Vector2.ZERO
 var _origin_parent: Node = null
 var _origin_z_index := 0
 
+func _ready() -> void:
+	DragableManager.register_card(self)
+
 func start_hover() -> void:
 	var tw := self.create_tween()
 	tw.tween_property(self, "scale", Vector2.ONE * hover_scale, 0.1)
