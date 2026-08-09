@@ -12,13 +12,20 @@ var row := 0
 var column := 0
 @export var zone_size := Vector2(100, 100)
 
+var _base_color := Color.WHITE
+
 ## Assigned by the GameBoard based on the zone's index in the 6x3 grid.
 func configure(board_index: int) -> void:
 	row = int(board_index / 3.0)
 	column = board_index % 3
 	_side = SIDE.ENEMY if row < 3 else SIDE.PLAYER
 	_drop_zone_type = _type_for_row(row)
-	color = Color(0.42, 0.25, 0.3, 1) if _side == SIDE.ENEMY else Color(0.32, 0.37, 0.52, 1)
+	_base_color = Color(0.42, 0.25, 0.3, 1) if _side == SIDE.ENEMY else Color(0.32, 0.37, 0.52, 1)
+	color = _base_color
+
+## Brightens the zone while its row is the current topic.
+func set_topic_highlight(is_topic: bool) -> void:
+	color = _base_color.lightened(0.35) if is_topic else _base_color
 
 func _type_for_row(r: int) -> ZONE_TYPE:
 	match r:

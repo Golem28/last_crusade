@@ -8,6 +8,12 @@ func _ready() -> void:
 	_configure_zones()
 	_spawn_enemies()
 	GameManager.turn_ended.connect(enemies_attack)
+	GameManager.row_topic_changed.connect(_on_topic_changed)
+	GameManager.start_turn()
+
+func _on_topic_changed(topic: int) -> void:
+	for zone in get_zones():
+		zone.set_topic_highlight(zone.get_drop_zone_type() == topic)
 
 func _configure_zones() -> void:
 	for i in get_child_count():
@@ -80,17 +86,26 @@ func get_enemy_cards() -> Array[Card]:
 func get_player_cards() -> Array[Card]:
 	return get_cards().filter(func(c: Card): return not c.is_enemy)
 
-## Called on every turn end. Every enemy that can attack strikes one of the
-## player's cards; if no player card is on the board, nothing happens.
+## Called on every turn end. Only up to two enemy cards standing in the
+## current row topic may attack; if no player card is on the board, nothing
+## happens.
 func enemies_attack() -> void:
 	var targets := get_player_cards()
 	if targets.is_empty():
 		return
 
+	var topic := GameManager.row_topic
+	var attacking := 0
 	for enemy in get_enemy_cards():
+		if attacking >= GameManager.ENEMY_ATTACK_LIMIT:
+			break
+		if enemy.get_drop_zone().get_drop_zone_type() != topic:
+			continue
 		var target := _enemy_target(enemy, targets)
-		if target != null:
-			target.take_damage(enemy.attack)
+		if target == null:
+			continue
+		target.take_damage(enemy.attack)
+		attacking += 1
 
 func _enemy_target(enemy: Card, targets: Array[Card]) -> Card:
 	# Ranged enemies can attack from anywhere. Melee enemies only attack
