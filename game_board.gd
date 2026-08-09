@@ -21,6 +21,24 @@ func get_attackable_targets(attacker: Card) -> Array[Card]:
 		return enemies
 	return _front_of_each_column(enemies)
 
+## True when no friendly card is closer to the enemy side in the same
+## column. Melee cards may only attack from the front of a column; if the
+## card in front of them dies they take its place.
+func is_front_of_column(card: Card) -> bool:
+	var zone := card.get_drop_zone()
+	if zone == null:
+		return false
+	var rank := zone.get_front_rank()
+	var peers := get_enemy_cards() if card.is_enemy else get_player_cards()
+	for other in peers:
+		if other == card:
+			continue
+		var other_zone := other.get_drop_zone()
+		if other_zone != null and other_zone.column == zone.column \
+				and other_zone.get_front_rank() < rank:
+			return false
+	return true
+
 ## One target per column: the enemy closest to the player's side. When a
 ## front-line card dies, the card behind it in the same column becomes the
 ## target instead.
@@ -139,8 +157,9 @@ func enemies_attack() -> void:
 
 func _enemy_target(enemy: Card, targets: Array[Card]) -> Card:
 	# Ranged enemies can attack from anywhere. Melee enemies only attack
-	# when they are standing on the enemy front line.
-	if not enemy.has_range and enemy.get_drop_zone().get_front_rank() != 0:
+	# when they are standing at the front of their column; a flank card
+	# steps up when the front card in front of it dies.
+	if not enemy.has_range and not is_front_of_column(enemy):
 		return null
 	return _most_front_card(targets)
 

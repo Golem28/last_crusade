@@ -91,6 +91,9 @@ func _on_card_released(card: Control) -> void:
 		_click_potential = false
 		if card.get_parent() is DropZone:
 			_select_for_attack(card as Card)
+			# The card was nudged to follow the mouse while pressed; put it
+			# back on its drop zone so the selection doesn't leave it askew.
+			card.return_to_origin()
 		return
 
 	var drop_zone: DropZone = _find_drop_zone_under(card)
@@ -114,6 +117,9 @@ func _on_card_released(card: Control) -> void:
 func _select_for_attack(card: Card) -> void:
 	var zone := card.get_drop_zone()
 	if zone == null or zone.get_drop_zone_type() != GameManager.row_topic:
+		return
+	# Melee cards only fight from the front of their column.
+	if not card.has_range and not _game_board().is_front_of_column(card):
 		return
 
 	var targets := _game_board().get_attackable_targets(card)
