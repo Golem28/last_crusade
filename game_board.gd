@@ -5,11 +5,41 @@ class_name GameBoard
 const ENEMY_CARD_SCENE := preload("res://Components/card.tscn")
 
 func _ready() -> void:
+	add_to_group("game_board")
 	_configure_zones()
 	_spawn_enemies()
 	GameManager.turn_ended.connect(enemies_attack)
 	GameManager.row_topic_changed.connect(_on_topic_changed)
 	GameManager.start_turn()
+
+## Enemies the given player card may attack this turn.
+## Ranged cards can hit any enemy; melee cards hit the most-front living
+## enemy in each column.
+func get_attackable_targets(attacker: Card) -> Array[Card]:
+	var enemies := get_enemy_cards()
+	if attacker.has_range:
+		return enemies
+	return _front_of_each_column(enemies)
+
+## One target per column: the enemy closest to the player's side. When a
+## front-line card dies, the card behind it in the same column becomes the
+## target instead.
+func _front_of_each_column(enemies: Array[Card]) -> Array[Card]:
+	var result: Array[Card] = []
+	for lane in 3:
+		var best: Card = null
+		var best_rank := 99
+		for enemy in enemies:
+			var zone := enemy.get_drop_zone()
+			if zone == null or zone.column != lane:
+				continue
+			var rank := zone.get_front_rank()
+			if rank < best_rank:
+				best_rank = rank
+				best = enemy
+		if best != null:
+			result.append(best)
+	return result
 
 func _on_topic_changed(topic: int) -> void:
 	for zone in get_zones():

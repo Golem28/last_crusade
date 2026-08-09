@@ -11,15 +11,32 @@ var attack := 0
 var health := 1
 var has_range := false
 
+var _is_selected := false
+var _is_attack_target := false
+var _highlight: ColorRect = null
+
 func _ready() -> void:
 	GameManager.turn_started.connect(func(): _acted = false)
 	_parse_card_data()
 	_setup_card_data()
+	_make_children_input_pass_through()
+	_highlight = get_node("Highlight")
 
 	if is_enemy:
 		_apply_zone_display()
-	else:
-		super._ready()
+
+	super._ready()
+
+## Let the card root handle all mouse input so clicks work on every part of
+## the card (children are purely visual).
+func _make_children_input_pass_through() -> void:
+	_set_input_pass_through(self)
+
+func _set_input_pass_through(node: Node) -> void:
+	for child in node.get_children():
+		if child is Control:
+			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_set_input_pass_through(child)
 
 func _parse_card_data() -> void:
 	card_name = card_data.get("name", "Mystic")
@@ -53,6 +70,10 @@ func _apply_zone_display() -> void:
 	if zone == null:
 		return
 
+	# A card's role follows the row it stands in: the rear line fights at
+	# range, the front and flank lines fight in melee.
+	has_range = zone.get_drop_zone_type() == DropZone.ZONE_TYPE.REAR
+
 	self.global_position = zone.global_position
 
 	(get_node("Content/Front") as Control).visible = zone.get_drop_zone_type() == DropZone.ZONE_TYPE.FRONT
@@ -70,3 +91,34 @@ func take_damage(amount: int) -> void:
 
 func acted_this_turn() -> bool:
 	return _acted
+
+func mark_acted() -> void:
+	_acted = true
+
+func set_selected(selected: bool) -> void:
+	_is_selected = selected
+	_update_highlight()
+
+func set_attack_target(is_target: bool) -> void:
+	_is_attack_target = is_target
+	_update_highlight()
+
+func _update_highlight() -> void:
+	if _highlight == null:
+		return
+	if _is_attack_target:
+		_highlight.color = Color(1, 0.2, 0.2, 0.5)
+		_highlight.visible = true
+	elif _is_selected:
+		_highlight.color = Color(1, 0.8, 0.1, 0.4)
+		_highlight.visible = true
+	else:
+		_highlight.visible = false
+
+## Enemy cards this card may attack this turn:
+## ranged can hit anything, melee only hits the enemy front line.
+func get_attackable_targets() -> Array[Card]:
+	var board := get_tree().get_first_node_in_group("game_board")
+	if board == null:
+		return []
+	return (board as GameBoard).get_attackable_targets(self)
