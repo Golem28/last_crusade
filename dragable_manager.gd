@@ -66,7 +66,7 @@ func _end_drag(dragable: Dragable) -> void:
 	var drop_zone: DropZone = _find_drop_zone_under(dragable)
 	dragable.end_drag()
 
-	if drop_zone and !drop_zone.is_occupied() and GameManager.try_spend(1):
+	if drop_zone and !drop_zone.is_occupied() and !drop_zone.is_enemy() and GameManager.try_spend(1):
 		dragable.handle_valid_drop(drop_zone)
 		card_dropped.emit(dragable, drop_zone)
 	else:
@@ -76,7 +76,7 @@ func _end_drag(dragable: Dragable) -> void:
 	_dragging_dragable = null
 
 func _is_card_fixed(card: Card) -> bool:
-	return GameManager.actions_remaining == 0 or card.acted_this_turn()
+	return card.is_enemy or GameManager.actions_remaining == 0 or card.acted_this_turn()
 
 func _find_drop_zone_under(card: Control) -> DropZone:
 	var zones := get_tree().get_nodes_in_group("drop_zone")
