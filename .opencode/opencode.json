@@ -2,9 +2,12 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "bash": {
-      "*": "ask",
-      "git *": "deny", 
-      "godot --debug .": "allow"
+      "*": "deny",
+      "docker run --volume .:/var/godot --name godot-dev -d prijindal/godot:4.6.2-stable-mono *": "allow",
+      "timeout * docker exec * godot-dev *": "allow",
+      "docker stop godot-dev": "allow",
+      "docker rm godot-dev": "allow",
+      "docker rm -f godot-dev": "allow"
     },
     "edit": {
       "/home/backfishcat/godot/last-crusade/.git/**": "deny",
